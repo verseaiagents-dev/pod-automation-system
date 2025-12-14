@@ -1,0 +1,135 @@
+{
+  "name": "POD - Printify Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-printify-product",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "printify-trigger",
+      "name": "Printify Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "pod-printify-create"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.printify.com/v1/uploads/images.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"file_name\": \"design_{{ $json.design_id }}.png\",\n  \"url\": \"{{ $json.image_url }}\"\n}",
+        "options": {}
+      },
+      "id": "upload-to-printify",
+      "name": "Upload Image to Printify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "printify-api",
+          "name": "Printify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.printify.com/v1/shops/{{ $env.PRINTIFY_SHOP_ID }}/products.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"title\": \"{{ $json.title }}\",\n  \"description\": \"{{ $json.description }}\",\n  \"blueprint_id\": {{ $json.blueprint_id }},\n  \"print_provider_id\": {{ $json.print_provider_id }},\n  \"variants\": [\n    {\n      \"id\": {{ $json.variant_id }},\n      \"price\": {{ $json.price }},\n      \"is_enabled\": true\n    }\n  ],\n  \"print_areas\": [\n    {\n      \"variant_ids\": [{{ $json.variant_id }}],\n      \"placeholders\": [\n        {\n          \"position\": \"front\",\n          \"images\": [\n            {\n              \"id\": \"{{ $('Upload Image to Printify').item.json.id }}\",\n              \"x\": 0.5,\n              \"y\": 0.5,\n              \"scale\": 1,\n              \"angle\": 0\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "create-product",
+      "name": "Create Printify Product",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "printify-api",
+          "name": "Printify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.printify.com/v1/shops/{{ $env.PRINTIFY_SHOP_ID }}/products/{{ $json.id }}/publish.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"title\": true,\n  \"description\": true,\n  \"images\": true,\n  \"variants\": true,\n  \"tags\": true,\n  \"keyFeatures\": true,\n  \"shipping_template\": true\n}",
+        "options": {}
+      },
+      "id": "publish-to-etsy",
+      "name": "Publish to Etsy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [910, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "printify-api",
+          "name": "Printify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "Products",
+        "recordId": "={{ $('Printify Trigger').item.json.product_record_id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldName": "printify_id", "fieldValue": "={{ $('Create Printify Product').item.json.id }}" },
+            { "fieldName": "status", "fieldValue": "published" },
+            { "fieldName": "published_at", "fieldValue": "={{ new Date().toISOString() }}" }
+          ]
+        }
+      },
+      "id": "update-airtable",
+      "name": "Update Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1130, 300],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "airtable-credentials",
+          "name": "Airtable Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Printify Trigger": {
+      "main": [[{ "node": "Upload Image to Printify", "type": "main", "index": 0 }]]
+    },
+    "Upload Image to Printify": {
+      "main": [[{ "node": "Create Printify Product", "type": "main", "index": 0 }]]
+    },
+    "Create Printify Product": {
+      "main": [[{ "node": "Publish to Etsy", "type": "main", "index": 0 }]]
+    },
+    "Publish to Etsy": {
+      "main": [[{ "node": "Update Airtable", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateId": "pod-printify-integration",
+    "description": "Creates products in Printify and publishes to Etsy"
+  }
+}

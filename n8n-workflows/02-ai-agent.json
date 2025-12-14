@@ -1,0 +1,120 @@
+{
+  "name": "POD - AI Agent Core",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-agent",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "agent-trigger",
+      "name": "Agent Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "pod-ai-agent"
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022",
+        "options": {
+          "systemMessage": "You are POD Agent, an AI-powered assistant specialized in managing a Print-on-Demand business workflow. You help users create, manage, and publish products to Etsy through Printify.\n\nYou have access to these tools:\n1. generate_design - Create AI artwork\n2. approve_design - Approve/reject designs\n3. create_mockups - Generate product mockups\n4. generate_copy - Write product descriptions\n5. create_printify_product - Create Printify products\n6. publish_to_etsy - Publish to Etsy\n7. get_status - Check workflow status\n8. manage_airtable - Database operations\n9. handle_error - Error recovery\n\nBe concise and action-oriented. Confirm critical actions before executing.",
+          "maxTokens": 4096,
+          "temperature": 0.7
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate a new design using AI. Input: { prompt: string, style?: string, colors?: string[] }",
+        "workflowId": "={{ $workflow.id }}",
+        "fields": {
+          "values": [
+            { "name": "prompt", "type": "string" },
+            { "name": "style", "type": "string" },
+            { "name": "colors", "type": "string" }
+          ]
+        }
+      },
+      "id": "tool-generate-design",
+      "name": "Generate Design Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [470, 500]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get status of designs, products, or queue. Input: { entity_type: 'design'|'product'|'queue', entity_id?: string }",
+        "workflowId": "={{ $workflow.id }}",
+        "fields": {
+          "values": [
+            { "name": "entity_type", "type": "string" },
+            { "name": "entity_id", "type": "string" }
+          ]
+        }
+      },
+      "id": "tool-get-status",
+      "name": "Get Status Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [670, 500]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022"
+      },
+      "id": "chat-model",
+      "name": "Claude Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [250, 500],
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-credentials",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.userId }}"
+      },
+      "id": "memory",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [350, 500]
+    }
+  ],
+  "connections": {
+    "Agent Trigger": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "Claude Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]]
+    },
+    "Generate Design Tool": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Get Status Tool": {
+      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateId": "pod-ai-agent",
+    "description": "Core AI Agent with Claude 3.5 Sonnet for processing natural language commands"
+  }
+}

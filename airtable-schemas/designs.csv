@@ -1,0 +1,17 @@
+field_name,field_type,description,options
+design_id,autonumber,Primary key,
+prompt,longtext,Original design prompt,
+enhanced_prompt,longtext,AI-enhanced prompt,
+image_url,url,Generated design URL,
+thumbnail_url,url,Thumbnail version,
+status,singleselect,Current status,"pending,generating,ready,approved,rejected"
+quality_score,number,AI quality rating 1-10,
+style_tags,multiselect,Design style tags,"abstract,minimal,vintage,modern,artistic,geometric,nature,typography"
+color_palette,multiselect,Primary colors used,"red,blue,green,yellow,orange,purple,pink,black,white,gray,gold,silver"
+created_at,datetime,Creation timestamp,
+approved_at,datetime,Approval timestamp,
+rejected_at,datetime,Rejection timestamp,
+rejection_reason,longtext,Reason if rejected,
+regeneration_count,number,Times regenerated,
+linked_products,link,Related products,Products
+created_by,singlelinetext,Slack user ID,

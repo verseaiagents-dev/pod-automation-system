@@ -1,0 +1,353 @@
+{
+  "tools": [
+    {
+      "name": "generate_design",
+      "description": "Generate a new AI design based on a text prompt. The design will be stored in Airtable and a preview will be sent to the user.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "The design description/concept to generate"
+          },
+          "style": {
+            "type": "string",
+            "enum": ["abstract", "minimal", "vintage", "modern", "artistic", "geometric", "nature", "typography"],
+            "description": "The visual style for the design"
+          },
+          "colors": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Preferred color palette (e.g., ['blue', 'white', 'gold'])"
+          },
+          "dimensions": {
+            "type": "string",
+            "enum": ["square", "portrait", "landscape"],
+            "default": "square",
+            "description": "Output image dimensions"
+          },
+          "enhance_prompt": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to AI-enhance the prompt before generation"
+          }
+        },
+        "required": ["prompt"]
+      }
+    },
+    {
+      "name": "approve_design",
+      "description": "Approve or reject a generated design. Approved designs will proceed to mockup generation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "design_id": {
+            "type": "string",
+            "description": "The unique identifier of the design to approve/reject"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["approve", "reject"],
+            "description": "Whether to approve or reject the design"
+          },
+          "feedback": {
+            "type": "string",
+            "description": "Optional feedback explaining the decision"
+          },
+          "regenerate": {
+            "type": "boolean",
+            "default": false,
+            "description": "If rejecting, whether to automatically regenerate"
+          }
+        },
+        "required": ["design_id", "action"]
+      }
+    },
+    {
+      "name": "create_mockups",
+      "description": "Generate product mockups for an approved design across various product types.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "design_id": {
+            "type": "string",
+            "description": "The design ID to create mockups for"
+          },
+          "product_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["t-shirt", "hoodie", "mug", "poster", "phone-case", "tote-bag", "pillow", "sticker"]
+            },
+            "description": "Product types to generate mockups for"
+          },
+          "mockup_styles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["front", "back", "detail", "lifestyle", "flat-lay"]
+            },
+            "default": ["front", "lifestyle"],
+            "description": "Types of mockup views to generate"
+          },
+          "colors": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Product color variants (e.g., ['black', 'white', 'navy'])"
+          }
+        },
+        "required": ["design_id", "product_types"]
+      }
+    },
+    {
+      "name": "generate_copy",
+      "description": "Generate SEO-optimized product title, description, and Etsy tags using AI.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "design_id": {
+            "type": "string",
+            "description": "The design ID to generate copy for"
+          },
+          "product_type": {
+            "type": "string",
+            "description": "The product category (e.g., 't-shirt', 'mug')"
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "Who is the ideal customer for this product"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Primary SEO keywords to include"
+          },
+          "tone": {
+            "type": "string",
+            "enum": ["professional", "casual", "fun", "luxury", "minimalist"],
+            "default": "casual",
+            "description": "Writing tone for the copy"
+          },
+          "variants_count": {
+            "type": "integer",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Number of title variants to generate"
+          }
+        },
+        "required": ["design_id", "product_type"]
+      }
+    },
+    {
+      "name": "create_printify_product",
+      "description": "Create a product in Printify with the specified design, mockups, and copy.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "design_id": {
+            "type": "string",
+            "description": "Source design ID"
+          },
+          "blueprint_id": {
+            "type": "string",
+            "description": "Printify blueprint/template ID"
+          },
+          "print_provider_id": {
+            "type": "string",
+            "description": "Printify print provider ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "Product title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxItems": 13,
+            "description": "Product tags (max 13 for Etsy)"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "variant_id": {"type": "string"},
+                "price": {"type": "number"},
+                "is_enabled": {"type": "boolean"}
+              }
+            },
+            "description": "Product variants with pricing"
+          },
+          "mockup_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Mockup IDs to use as product images"
+          }
+        },
+        "required": ["design_id", "blueprint_id", "print_provider_id", "title", "variants"]
+      }
+    },
+    {
+      "name": "publish_to_etsy",
+      "description": "Publish a Printify product to the connected Etsy shop.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "printify_product_id": {
+            "type": "string",
+            "description": "The Printify product ID to publish"
+          },
+          "shop_section_id": {
+            "type": "string",
+            "description": "Etsy shop section to place the listing"
+          },
+          "publish_immediately": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to publish immediately or save as draft"
+          },
+          "notify_user": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to send confirmation to user"
+          }
+        },
+        "required": ["printify_product_id"]
+      }
+    },
+    {
+      "name": "get_status",
+      "description": "Get the current status of designs, products, or the processing queue.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "enum": ["design", "product", "mockup", "queue", "all"],
+            "description": "Type of entity to get status for"
+          },
+          "entity_id": {
+            "type": "string",
+            "description": "Specific entity ID, or omit for list view"
+          },
+          "status_filter": {
+            "type": "string",
+            "enum": ["pending", "processing", "completed", "failed", "all"],
+            "default": "all",
+            "description": "Filter by status"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 50,
+            "description": "Maximum number of items to return"
+          },
+          "include_details": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to include full details or summary only"
+          }
+        },
+        "required": ["entity_type"]
+      }
+    },
+    {
+      "name": "manage_airtable",
+      "description": "Perform CRUD operations on the Airtable database.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": ["create", "read", "update", "delete", "search"],
+            "description": "Database operation to perform"
+          },
+          "table": {
+            "type": "string",
+            "enum": ["designs", "products", "mockups", "copy", "queue", "settings", "logs", "analytics"],
+            "description": "Table to operate on"
+          },
+          "record_id": {
+            "type": "string",
+            "description": "Record ID for read/update/delete operations"
+          },
+          "data": {
+            "type": "object",
+            "description": "Record data for create/update operations"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Airtable formula filter for search operations"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {"type": "string"},
+                "direction": {"type": "string", "enum": ["asc", "desc"]}
+              }
+            },
+            "description": "Sort configuration for search results"
+          }
+        },
+        "required": ["operation", "table"]
+      }
+    },
+    {
+      "name": "handle_error",
+      "description": "Handle errors, implement retry logic, and notify users when needed.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "error_type": {
+            "type": "string",
+            "enum": ["api_error", "rate_limit", "validation_error", "timeout", "unknown"],
+            "description": "Category of the error"
+          },
+          "error_message": {
+            "type": "string",
+            "description": "Detailed error message"
+          },
+          "source": {
+            "type": "string",
+            "enum": ["design_generation", "mockup_creation", "copy_generation", "printify", "etsy", "airtable", "slack"],
+            "description": "Component where error occurred"
+          },
+          "context": {
+            "type": "object",
+            "description": "Additional context about the error"
+          },
+          "retry_count": {
+            "type": "integer",
+            "default": 0,
+            "description": "Current retry attempt number"
+          },
+          "auto_retry": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to automatically retry"
+          },
+          "notify_user": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether to immediately notify the user"
+          }
+        },
+        "required": ["error_type", "error_message", "source"]
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-12",
+    "compatible_models": ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229"],
+    "n8n_version": "1.x"
+  }
+}

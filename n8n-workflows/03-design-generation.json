@@ -1,0 +1,220 @@
+{
+  "name": "POD - Design Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-design",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "design-trigger",
+      "name": "Design Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "pod-generate-design"
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert prompt engineer for AI image generation. Your task is to enhance user prompts to create stunning, print-ready designs for products like t-shirts, mugs, and posters.\n\nEnhancement guidelines:\n- Add specific art style details (vector, watercolor, minimalist, etc.)\n- Include composition guidance (centered, symmetrical, etc.)\n- Specify color harmony and contrast\n- Add texture and detail descriptions\n- Ensure print-friendly specifications (solid background or transparent)\n- Keep the core concept intact\n\nOutput only the enhanced prompt, nothing else."
+            },
+            {
+              "role": "user",
+              "content": "Enhance this design prompt for print-on-demand: {{ $json.prompt }}"
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.8
+        }
+      },
+      "id": "enhance-prompt",
+      "name": "Enhance Prompt",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [470, 300],
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-credentials",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $credentials.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Generate an image: {{ $json.enhancedPrompt }}\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"responseModalities\": [\"image\", \"text\"],\n    \"responseMimeType\": \"image/png\"\n  }\n}",
+        "options": {}
+      },
+      "id": "generate-image",
+      "name": "Generate Image (NanoBanana)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "google-api-key",
+          "name": "Google API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a design quality assessor. Rate the design on a scale of 1-10 based on:\n- Visual appeal (2 points)\n- Print readiness (2 points)\n- Composition (2 points)\n- Color harmony (2 points)\n- Commercial viability (2 points)\n\nRespond with JSON: { \"score\": number, \"feedback\": string, \"approved\": boolean }\nApproved = true if score >= 7"
+            },
+            {
+              "role": "user",
+              "content": "Rate this design for print-on-demand use."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 200
+        }
+      },
+      "id": "quality-check",
+      "name": "Quality Check",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [910, 300],
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-credentials",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "baseId": "={{ $env.AIRTABLE_BASE_ID }}",
+        "tableId": "Designs",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldName": "prompt", "fieldValue": "={{ $('Design Trigger').item.json.prompt }}" },
+            { "fieldName": "enhanced_prompt", "fieldValue": "={{ $('Enhance Prompt').item.json.enhancedPrompt }}" },
+            { "fieldName": "image_url", "fieldValue": "={{ $('Generate Image (NanoBanana)').item.json.imageUrl }}" },
+            { "fieldName": "quality_score", "fieldValue": "={{ $json.score }}" },
+            { "fieldName": "status", "fieldValue": "={{ $json.approved ? 'ready' : 'pending' }}" }
+          ]
+        }
+      },
+      "id": "save-to-airtable",
+      "name": "Save to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [1130, 300],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "airtable-credentials",
+          "name": "Airtable Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "={{ $('Design Trigger').item.json.channelId }}",
+        "text": "Design generated!",
+        "blocksUi": {
+          "blocksValues": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Design Generated* :art:\n\n*Quality Score:* {{ $json.score }}/10\n*Status:* {{ $json.approved ? 'Ready for Review' : 'Needs Improvement' }}"
+              }
+            },
+            {
+              "type": "image",
+              "imageUrl": "={{ $('Generate Image (NanoBanana)').item.json.imageUrl }}",
+              "altText": "Generated Design"
+            },
+            {
+              "type": "actions",
+              "elements": [
+                {
+                  "type": "button",
+                  "text": { "type": "plain_text", "text": "Approve" },
+                  "style": "primary",
+                  "value": "approve_{{ $('Save to Airtable').item.json.id }}"
+                },
+                {
+                  "type": "button",
+                  "text": { "type": "plain_text", "text": "Reject" },
+                  "style": "danger",
+                  "value": "reject_{{ $('Save to Airtable').item.json.id }}"
+                },
+                {
+                  "type": "button",
+                  "text": { "type": "plain_text", "text": "Regenerate" },
+                  "value": "regenerate_{{ $('Save to Airtable').item.json.id }}"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "id": "notify-slack",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1350, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-credentials",
+          "name": "Slack API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Design Trigger": {
+      "main": [[{ "node": "Enhance Prompt", "type": "main", "index": 0 }]]
+    },
+    "Enhance Prompt": {
+      "main": [[{ "node": "Generate Image (NanoBanana)", "type": "main", "index": 0 }]]
+    },
+    "Generate Image (NanoBanana)": {
+      "main": [[{ "node": "Quality Check", "type": "main", "index": 0 }]]
+    },
+    "Quality Check": {
+      "main": [[{ "node": "Save to Airtable", "type": "main", "index": 0 }]]
+    },
+    "Save to Airtable": {
+      "main": [[{ "node": "Notify Slack", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateId": "pod-design-generation",
+    "description": "Generates AI designs with prompt enhancement and quality scoring"
+  }
+}

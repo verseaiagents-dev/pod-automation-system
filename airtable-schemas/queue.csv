@@ -1,0 +1,17 @@
+field_name,field_type,description,options
+queue_id,autonumber,Primary key,
+task_type,singleselect,Type of task,"design_generation,mockup_creation,copy_generation,printify_creation,etsy_publish"
+payload,longtext,JSON task data,
+priority,singleselect,Task priority,"low,normal,high,urgent"
+status,singleselect,Queue status,"queued,processing,completed,failed,cancelled"
+attempts,number,Retry attempt count,
+max_attempts,number,Maximum retry attempts,
+error_message,longtext,Last error if failed,
+error_code,singlelinetext,Error code if failed,
+related_design,link,Related design,Designs
+related_product,link,Related product,Products
+created_at,datetime,Queued timestamp,
+started_at,datetime,Processing start,
+completed_at,datetime,Completion timestamp,
+processing_time_ms,number,Time to complete in ms,
+triggered_by,singlelinetext,Slack user or system,

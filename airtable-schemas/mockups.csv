@@ -1,0 +1,11 @@
+field_name,field_type,description,options
+mockup_id,autonumber,Primary key,
+design_id,link,Source design,Designs
+product_id,link,Related product,Products
+mockup_type,singleselect,Type of mockup,"front,back,detail,lifestyle,flat-lay"
+product_color,singleselect,Product color variant,"black,white,navy,gray,red,blue,green"
+image_url,url,Full resolution mockup URL,
+thumbnail_url,url,Thumbnail URL,
+is_primary,checkbox,Primary listing image,
+sort_order,number,Display order,
+created_at,datetime,Creation timestamp,

@@ -1,0 +1,22 @@
+field_name,field_type,description,options
+product_id,autonumber,Primary key,
+design_id,link,Source design,Designs
+product_type,singleselect,Product category,"t-shirt,hoodie,mug,poster,phone-case,tote-bag,pillow,sticker"
+title,singlelinetext,Product title,
+description,longtext,Full product description,
+tags,longtext,SEO tags comma separated,
+base_price,currency,Base production cost,
+selling_price,currency,Customer price,
+profit_margin,formula,selling_price - base_price,
+printify_id,singlelinetext,Printify product ID,
+printify_url,url,Printify product URL,
+etsy_listing_id,singlelinetext,Etsy listing ID,
+etsy_url,url,Live Etsy listing URL,
+status,singleselect,Product status,"draft,pending_review,approved,published,paused,archived"
+blueprint_id,singlelinetext,Printify blueprint ID,
+print_provider_id,singlelinetext,Print provider ID,
+variants_count,number,Number of variants,
+created_at,datetime,Creation timestamp,
+published_at,datetime,Publication timestamp,
+linked_mockups,link,Product mockups,Mockups
+linked_copy,link,Product copy versions,Copy

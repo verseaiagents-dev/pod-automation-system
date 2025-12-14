@@ -1,0 +1,115 @@
+{
+  "name": "POD - Slack Command Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-commands",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Slack Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "slack-pod-commands"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Slack command\nconst body = $input.first().json.body;\nconst command = body.command;\nconst text = body.text || '';\nconst userId = body.user_id;\nconst channelId = body.channel_id;\nconst responseUrl = body.response_url;\n\n// Parse command and arguments\nlet action = '';\nlet args = {};\n\nswitch(command) {\n  case '/generate':\n    action = 'generate_design';\n    args = { prompt: text };\n    break;\n  case '/status':\n    action = 'get_status';\n    args = { entity_id: text || 'all' };\n    break;\n  case '/approve':\n    action = 'approve_design';\n    args = { design_id: text, action: 'approve' };\n    break;\n  case '/reject':\n    action = 'approve_design';\n    const parts = text.split(' ');\n    args = { \n      design_id: parts[0], \n      action: 'reject',\n      feedback: parts.slice(1).join(' ')\n    };\n    break;\n  case '/mockup':\n    action = 'create_mockups';\n    const mockupParts = text.split(' ');\n    args = { \n      design_id: mockupParts[0],\n      product_types: mockupParts.slice(1)\n    };\n    break;\n  case '/publish':\n    action = 'publish_to_etsy';\n    args = { product_id: text };\n    break;\n  default:\n    action = 'help';\n}\n\nreturn {\n  action,\n  args,\n  userId,\n  channelId,\n  responseUrl,\n  rawCommand: command,\n  rawText: text\n};"
+      },
+      "id": "parse-command",
+      "name": "Parse Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "generate",
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "generate_design",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "status",
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "get_status",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            },
+            {
+              "outputKey": "approve",
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "approve_design",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "route-command",
+      "name": "Route Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ response_type: 'ephemeral', text: 'Processing your request...' }) }}",
+        "options": {}
+      },
+      "id": "immediate-response",
+      "name": "Immediate Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Slack Webhook": {
+      "main": [[{ "node": "Parse Command", "type": "main", "index": 0 }]]
+    },
+    "Parse Command": {
+      "main": [[{ "node": "Route Command", "type": "main", "index": 0 }]]
+    },
+    "Route Command": {
+      "main": [
+        [{ "node": "Immediate Response", "type": "main", "index": 0 }],
+        [{ "node": "Immediate Response", "type": "main", "index": 0 }],
+        [{ "node": "Immediate Response", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateId": "pod-slack-handler",
+    "description": "Handles incoming Slack commands and routes them to appropriate workflows"
+  }
+}

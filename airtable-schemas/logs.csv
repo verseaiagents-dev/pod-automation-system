@@ -1,0 +1,14 @@
+field_name,field_type,description,options
+log_id,autonumber,Primary key,
+level,singleselect,Log severity level,"debug,info,warning,error,critical"
+source,singleselect,Log source component,"slack,n8n,printify,etsy,ai,airtable,system"
+action,singlelinetext,Action that was performed,
+message,longtext,Log message,
+metadata,longtext,JSON additional data,
+related_design,link,Related design if any,Designs
+related_product,link,Related product if any,Products
+related_queue,link,Related queue item,Queue
+user_id,singlelinetext,Slack user ID if applicable,
+ip_address,singlelinetext,Request IP if applicable,
+duration_ms,number,Operation duration in ms,
+timestamp,datetime,Log timestamp,

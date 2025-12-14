@@ -1,0 +1,11 @@
+field_name,field_type,description,options
+setting_id,autonumber,Primary key,
+setting_key,singlelinetext,Unique setting identifier,
+setting_value,longtext,Setting value,
+setting_type,singleselect,Data type,"string,number,boolean,json,array"
+category,singleselect,Setting category,"general,design,mockup,copy,printify,etsy,slack,ai"
+description,longtext,What this setting does,
+is_sensitive,checkbox,Contains sensitive data,
+default_value,longtext,Default if not set,
+updated_at,datetime,Last update timestamp,
+updated_by,singlelinetext,Who made last change,

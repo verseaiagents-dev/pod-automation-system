@@ -1,0 +1,17 @@
+field_name,field_type,description,options
+copy_id,autonumber,Primary key,
+product_id,link,Related product,Products
+design_id,link,Source design,Designs
+version_number,number,Copy version number,
+title,singlelinetext,Product title,
+title_length,formula,LEN(title),
+description,longtext,Product description,
+description_length,formula,LEN(description),
+tags,longtext,Etsy tags comma separated,
+tag_count,formula,Count of tags,
+target_keywords,longtext,SEO keywords targeted,
+seo_score,number,SEO quality score,
+tone,singleselect,Writing tone,"professional,casual,fun,luxury,minimalist"
+is_selected,checkbox,Currently active version,
+created_at,datetime,Creation timestamp,
+created_by,singleselect,AI or Human created,"ai,human"
