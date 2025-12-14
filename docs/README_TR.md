@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../assets/images/logo.png" width="400" alt="POD Automation System">
+  <img src="../assets/images/logo.svg" width="400" alt="POD Automation System">
 </p>
 
 <p align="center">

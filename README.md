@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/images/logo.png" width="400" alt="POD Automation System">
+  <img src="assets/images/logo.svg" width="400" alt="POD Automation System">
 </p>
 
 <p align="center">
@@ -82,7 +82,7 @@ You: /generate abstract ocean waves, blue palette
 ## 🏗️ Architecture
 
 <p align="center">
-  <img src="assets/images/architecture.png" width="800" alt="System Architecture">
+  <img src="assets/images/architecture.svg" width="800" alt="System Architecture">
 </p>
 
 ```
